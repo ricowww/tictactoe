@@ -39,8 +39,31 @@
 [x]pattern checker
 [x]grid generator
 []player creator
-
 */
+   
+//GRID GENERATE FUNCTION
+const ContainerDiv = document.querySelector('#containerDiv');//declare attach point for pixel divs
+function generateGrids(gridSize){
+    for (let i=0; i<(gridSize**2); i++){ //make divs
+    let newDiv = document.createElement('div');//store 1 new div in a variable
+    newDiv.id = 1 + i; //give it different id each time
+    newDiv.classList = 'pixels'; //common class for manipulation
+    //[ ] linked object for each pixel
+    //[ ] status property for div object
+    //[ ] id property for div object
+    ContainerDiv.appendChild(newDiv);//append them each to attach point
+    ContainerDiv.style.cssText = `grid-template-columns: repeat(${gridSize}, calc(66vmin/${gridSize}));grid-template-rows: repeat(${gridSize}, calc(66vmin/${gridSize}))`;//custom grid style responsive to input size
+    };
+    };//tested working
+  
+//STARTING GRID = 3x3
+generateGrids(3);
+
+
+//[ ]Player constructor function
+
+
+
 
 
 //VAR
@@ -100,29 +123,18 @@ function checkAllPAtterns(inputTiles, tictactoePattern){//input id of tiles held
 };
 //All Pattern Checker - DONE
 
-//Grid Maker
+//[ ]Trigger for start button
+//[ ]call player constructor
+//[ ]call tile change function
+//[ ]call victory evaluate
+//[ ]call AI move
+//[ ]call tile change function
+//[ ]call victory evaluate
+//[ ]call game winner
+//[ ]call reset button
 
-   
-//GRID GENERATE
-const ContainerDiv = document.querySelector('#containerDiv');//declare attach point for pixel divs
-
-function generateGrids(gridSize){
-    for (let i=0; i<(gridSize**2); i++){ //make divs
-    let newDiv = document.createElement('div');//store 1 new div in a variable
-    newDiv.id = 1 + i; //give it different id each time
-    newDiv.classList = 'pixels'; //common class for manipulation
-    ContainerDiv.appendChild(newDiv);//append them each to attach point
-    ContainerDiv.style.cssText = `grid-template-columns: repeat(${gridSize}, calc(66vmin/${gridSize}));grid-template-rows: repeat(${gridSize}, calc(66vmin/${gridSize}))`;//custom grid style responsive to input size
-    };
-    };//tested working
-  
-//STARTING GRID = 3x3
-generateGrids(3);
 
 //AI to pick random tiles
-
-
-
 
 
 
