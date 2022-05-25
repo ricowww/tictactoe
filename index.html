@@ -29,61 +29,48 @@
 <body>
     <div>
         <h1>Tic Tac Toe</h1>
-        <p>Status Bar</p>
+        <p id='statusBar'>Status Bar</p>
         
         <button id="startButton">Start</button>
     </div>
     <div id='containerDiv'></div>
 <script>
-/* 
-[x]pattern checker
-[x]grid generator
-[]player creator
-*/
+
 
 //PLAYERS VAR
 const Player = []; //contains players created
 
-//PLAYER STATS VAR
+//PLAYER STATS VARIABLES
 let playerIdCounter = 0; //counts players created// 
 let name = "";//temporarily hold name input
 let playerId = "";//temporarily hold playerId input
 let playerStatus = "";//temporarily hold playerStatus input
 
-//PLAYER CONSTRUCTOR
+//FUNCTION PLAYER CONSTRUCTOR
 function newPlayer(name, playerId, playerStatus){
     this.name = name //title prototype = title var etc.
     this.playerId = playerId
     this.playerStatus = playerStatus
 }
 
-
-//PROMPT FOR PLAYER STATS
-function promptNewPlayer() {
+//FUNCTION PROMPT AND CREATE NEW PLAYER
+function createNewPlayer() {
     //reset variables first
     name = "";//temporarily hold data when making a new book etc.
     playerId = "";//temporarily hold title input
     playerStatus = 0;//temporarily hold author input
-    
     //prompt with helpers
     playerIdCounter = playerIdCounter + 1;//as ID
     while(name == ''){
         name = prompt('Name of Player');//only accept non-empty inputs
     };
-    playerId = playerIdCounter;
+    playerId = playerIdCounter;//id is the sequence number
     playerStatus = 2; //turn is 2nd
-
     Player[name] = new newPlayer(//new object as an element by calling constructor based on above inputs
         name,
         playerId,
         playerStatus);
 }
-
-
-
-
-
-
 
 //GRID GENERATE FUNCTION
 const ContainerDiv = document.querySelector('#containerDiv');//declare attach point for pixel divs
@@ -92,22 +79,55 @@ function generateGrids(gridSize){
     let newDiv = document.createElement('div');//store 1 new div in a variable
     newDiv.id = 1 + i; //give it different id each time
     newDiv.classList = 'pixels'; //common class for manipulation
-    //[ ] linked object for each pixel
-    //[ ] status property for div object
-    //[ ] id property for div object
     ContainerDiv.appendChild(newDiv);//append them each to attach point
-    ContainerDiv.style.cssText = `grid-template-columns: repeat(${gridSize}, calc(66vmin/${gridSize}));grid-template-rows: repeat(${gridSize}, calc(66vmin/${gridSize}))`;//custom grid style responsive to input size
+    ContainerDiv.style.cssText = `grid-template-columns: repeat(${gridSize}, calc(66vmin/${gridSize}));grid-template-rows: repeat(${gridSize}, calc(66vmin/${gridSize}))`;//custom grid style 
     };
     };//tested working
   
-//STARTING GRID = 3x3
-generateGrids(3);
+//HOLDER OF TILE OBJECTS
+const Tiles = [];
+
+//FUNCTION TILE OBJECT
+function createTileObject(){
+    for (let j = 1; j < 10; j++) {
+        Tiles[j] = document.getElementById(j);
+        Tiles[j].tileStatus = 0;//0 is blank, 1 is X, 2 is O
+    }
+}
+
+//CHANGE TILE FUNCTION
+function changeTile(numberId, playerId){//input id number of tile and the id number of the player
+    Tiles[numberId].tileStatus = playerId; //playerId human = 1, AI = 2
+    //changes the tile tile object status
+};
 
 
-//[ ]Player constructor function
+//VAR STATUS BAR
+const statusBar = document.querySelector('#statusBar');
 
+//FUNCTION GAME STEP MESSENGER
+function gameStepMessenger(){
+    let gameStepMessage = '';
+    if (gameStepCounter % 2 != 0){//if remainder is not zero
+        gameStepMessage = 'Your turn, Player 1';
+    } else {
+        gameStepMessage = 'Turn of Computer';
+    }
+    statusBar.textContent = gameStepMessage;
+};
 
-
+//FUNCTION EVENT LISTENER TO TILES
+function eventListenerTiles(){//when player clicks a tile
+    for (let k = 1; k<10; k++){
+        Tiles[k].addEventListener('click', (e) =>{
+            let tempId = (e.target).id;//temporary to store ID of tile clicked
+            alert(tempId);//checker
+            changeTile(tempId, 1)//change tile status
+            //more functions like calling AI turn
+            }
+        )
+    };
+};
 
 
 //VAR
@@ -167,26 +187,77 @@ function checkAllPAtterns(inputTiles, tictactoePattern){//input id of tiles held
 };
 //All Pattern Checker - DONE
 
+//VAR GAME STEP COUNTER
+let gameStepCounter = 0;//counts the number of total steps in the game at the beginning
 
 
 
-//[X ]Trigger for start button
-//[X ]call player constructor
-//[ ]call tile change function
-//[ ]call victory evaluate
-//[ ]call AI move
-//[ ]call tile change function
-//[ ]call victory evaluate
-//[ ]call game winner
-//[ ]call reset button
 
-//TRIGGER
+//VAR VICTORIOUS
+let victor = 0; //either 1 for human or 2 for AI
+
+//FUNCTION GAME WINNER
+function gameWinner(victor){
+    let winnerPlayer = '';
+    if (victor == 1){
+        winnerPlayer = 'human';
+    } else {
+        winnerPlayer = 'computer';
+    }
+    alert(`Game over, ${winnerPlayer} wins!`);
+}
+
+//FUNCTION TILE RESET
+function resetTileObjects(){
+    for (let j = 1; j < 10; j++) {
+        Tiles[j].tileStatus = 0;//0 is blank, 1 is X, 2 is O
+    }
+}
+
+//INITIALIZE
+generateGrids(3);//CALL STARTING GRID = 3x3
+createTileObject();//CALL TILE OBJECTS
+
+
+
+//TRIGGER FOR START BUTTON
 const Make = document.querySelector("#startButton")
 Make.addEventListener('click', () =>{
-    promptNewPlayer();// prompt for inputs
-    
+    createNewPlayer();//create new player
+    resetTileObjects();//blank all the tiles
+    gameStepCounter = gameStepCounter++;
+    gameStepMessenger();//announce step of player 
+    eventListenerTiles()//call add event listener to tiles
     }
 )
+
+//SEQUENCE OF EVENTS
+/* 
+0. Initialize by creating grids
+1. Player 1 clicks start, inputs name, this resets all tiles status to blank
+2. Player 1 does the first move by clicking the tile which changes the tile color, step counter starts at 1
+3. After Player 1's click, the AI randomizes the tile choice and changes the tile color, step counter at 2
+4. Player 1 clicks again, step counter at 3
+5. AI chooses again, step counter at 4
+6. ....at step counter = 5, victory evaluator kicks in
+7. Once any player wins, game message pops up at a prompt to continue emulates step#1
+*/
+
+
+//[X]Trigger for start button
+//[X]call player constructor
+//[x]call tile change function
+//[. ]call victory evaluate
+//[. ]call AI move
+//[. ]call tile change function
+//[. ]call victory evaluate
+//[. ]call game winner
+//[. ]call reset button
+//[ ]CSS for tile colors
+//[ ]CSS for design
+//[ ]use modules
+
+
 
 
 
