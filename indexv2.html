@@ -1,0 +1,338 @@
+<!DOCTYPE html> 
+ <html lang="en"> 
+ <head> 
+     <meta charset="UTF-8"> 
+     <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
+     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+     <title>Document</title> 
+ <style> 
+  
+     .button { 
+       padding: 10px; 
+     } 
+  
+     #containerDiv {  
+       display: grid; 
+       /*grid-template-columns: repeat(16, calc(100vmin/16)); 
+       grid-template-rows: repeat(16, calc(100vmin/16));*/ 
+     } 
+      
+     .pixels { 
+     border: 1px solid rgb(0, 0, 0); 
+     background: blueviolet; 
+     /*padding: calc(100vmin/(var(gridSize)*2));*/ 
+     } 
+
+     .cross { 
+     border: 1px solid rgb(0, 0, 0); 
+     background: url(media/cross.png); 
+     background-size: 100%;
+     } 
+
+     .circle { 
+     border: 1px solid rgb(0, 0, 0); 
+     background: url(media/circle.png); 
+     background-size: 100%;
+     } 
+    
+  
+ </style> 
+ </head> 
+ <body> 
+     <div> 
+         <h1>Tic Tac Toe</h1> 
+         <p id='statusBar'>Status Bar</p> 
+          
+         <button id="startButton">Start</button> 
+     </div> 
+     <div id='containerDiv'></div> 
+ <script> 
+  
+  
+ //PLAYERS VAR 
+ const Player = []; //contains players created 
+  
+ //PLAYER STATS VARIABLES 
+ let playerIdCounter = 0; //counts players created//  
+ let name = "";//temporarily hold name input 
+ let playerId = "";//temporarily hold playerId input 
+ let playerTiles = [];//temporarily hold playerTiles input 
+  
+ //FUNCTION PLAYER CONSTRUCTOR 
+ function newPlayer(name, playerId){ //, playerTiles
+     this.name = name //title prototype = title var etc. 
+     this.playerId = playerId 
+     this.playerTiles = [] //set array to empty
+ } 
+  
+ //FUNCTION PROMPT AND CREATE NEW PLAYER 
+ function createNewPlayer() { 
+     //reset variables first 
+     name = "";//temporarily hold data when making a new book etc. 
+     playerId = "";//temporarily hold title input 
+     playerTiles = [];//temporarily hold author input 
+     //prompt with helpers 
+     //playerIdCounter = playerIdCounter + 1;//as ID 
+     while(name == ''){ 
+         name = prompt('Name of Player');//only accept non-empty inputs 
+     }; 
+     playerId = 1;// 
+     playerTiles = []; //turn is 2nd 
+     Player[1] = new newPlayer(//new object as an element by calling constructor based on above inputs 
+         name, 
+         playerId); 
+ }
+ //BUG - SOLVED
+ //clicking and typing and also calling an AI creator creates two player elements - this is due to use of foced 1 and 2 values for player and AI
+  
+ //GRID GENERATE FUNCTION 
+ const ContainerDiv = document.querySelector('#containerDiv');//declare attach point for pixel divs 
+ function generateGrids(gridSize){ 
+     for (let i=0; i<(gridSize**2); i++){ //make divs 
+     let newDiv = document.createElement('div');//store 1 new div in a variable 
+     newDiv.id = 1 + i; //give it different id each time 
+     newDiv.classList = 'pixels'; //common class for manipulation 
+     ContainerDiv.appendChild(newDiv);//append them each to attach point 
+     ContainerDiv.style.cssText = `grid-template-columns: repeat(${gridSize}, calc(66vmin/${gridSize}));grid-template-rows: repeat(${gridSize}, calc(66vmin/${gridSize}))`;//custom grid style  
+     }; 
+     };//tested working 
+    
+ //HOLDER OF TILE OBJECTS 
+ const Tiles = []; 
+  
+ //FUNCTION TILE OBJECT 
+ function createTileObject(){ 
+     for (let j = 1; j < 10; j++) { 
+         Tiles[j] = document.getElementById(j); 
+         Tiles[j].tileStatus = 0;//0 is blank, 1 is X, 2 is O 
+     } 
+ } 
+  
+ //CHANGE TILE FUNCTION 
+ function changeTile(tileId, playerId){//input id number of tile and the id number of the player 
+     Tiles[tileId].tileStatus = playerId; //playerId human = 1, AI = 2 //changes the tile  object status
+     if (playerId == 1) {
+        Tiles[tileId].className = "cross";//changes html class 
+    } else {
+        Tiles[tileId].className = "circle";
+    }
+ }; 
+  
+
+
+ //VAR STATUS BAR 
+ const statusBar = document.querySelector('#statusBar'); 
+
+  //FUNCTION TILE RESET 
+  function resetTileObjects(){ 
+     for (let j = 1; j < 10; j++) { 
+         Tiles[j].tileStatus = 0;//0 is blank, 1 is X, 2 is O 
+     } 
+ } 
+  
+ //FUNCTION GAME STEP MESSENGER 
+ function gameStepMessenger(){ 
+     let gameStepMessage = ''; 
+     if (gameStepCounter % 2 != 0){//if remainder is not zero 
+         gameStepMessage = 'Your turn, Player 1'; 
+     } else { 
+         gameStepMessage = 'Turn of Computer'; 
+     } 
+     statusBar.textContent = gameStepMessage; 
+ }; 
+
+
+ //FUNCTION AI PLAYER CREATOR
+ function aiPlayer(){
+    Player[2] = new newPlayer('Computer', 2);
+ }
+
+ //FUNCTION CREATE LIST OF UNOCCUPIED TILES
+ //loop from 1 to 9
+ //if status == 1, push id to array
+ let unoccupiedTilesArray = [];
+ function unoccupiedTiles(){
+    unoccupiedTilesArray = [];//reset during refresh to avoid stacking array
+    for (let l = 1; l<10; l++){//from 1 to 9
+        if(Tiles[l].tileStatus == 0){//check if the tile is unoccupied
+            unoccupiedTilesArray.push(Tiles[l].id)//if yes then add id of tile
+        } else{};
+    }
+ };
+
+ //VAR NEXT TILE
+ let nextTile = 0;
+
+ //FUNCTION AI NEXT MOVE  - BUG CAUSES PC TO HANG
+ function aiNextMove(){
+    nextTile = 0;//next move of AI, 0 as placeholder 
+    let i = 0; 
+    while (!i == 1){//loop until i is TRUE 
+        let randNum = Math.random();//0.0 to 0.9 
+        nextTile = Math.ceil(randNum*10);//move to next integer 
+        if(unoccupiedTilesArray.includes(nextTile)){
+            i = 1;//if tile is valid, set i to TRUE 
+        } 
+    } 
+    return nextTile;//out the next move 
+ }; 
+ 
+
+  
+ //FUNCTION EVENT LISTENER TO TILES 
+ function eventListenerTiles(){//when player clicks a tile 
+     for (let k = 1; k<10; k++){ 
+         Tiles[k].addEventListener('click', (e) =>{ 
+             let tempId = (e.target).id;//temporary to store ID of tile clicked 
+             alert(tempId);//checker 
+             changeTile(tempId, 1);//change tile status and class
+             unoccupiedTiles();//list available tiles for AI
+             let tempIdAi = 0; //next tile of AI
+             //tempIdAi = aiNextMove();
+             //alert(tempIdAi);
+            } 
+         ) 
+     }; 
+ }; 
+
+
+
+ //FUNCTION UPDATE LIST OF TILE IDS OWNED BY PLAYER
+ //fully tested
+ function tileListPlayer(tileId, playerId){
+     (Player[playerId].playerTiles).push(tileId);
+ }
+  
+ //VAR 
+ let tictactoePatterns = [ 
+     [7,5,3], 
+     [1,5,9], 
+     [1,2,3], 
+     [4,5,6], 
+     [7,8,9], 
+     [1,4,7], 
+     [2,5,8], 
+     [3,6,9] 
+     ]; //declare array containing array of patterns for tictactoe victory; tiles start from L-R from 1 to 9 - DONE 
+ let ticArrayPlayer1 = [];//declare array for testing 
+       
+ //Single Pattern Checker - DONE 
+ ///array with 1-9 works as it returns 1 
+ ///array with 1-9 with no 5 works as it returns 0 
+ function checkSubPattern(ticArray, patterns){ 
+     let A = 0; 
+     let B = 1; 
+     let C = 2;//ABC are sub test results holders 
+     if(ticArray.includes(patterns[0])){ 
+         A = 1; 
+     } else { 
+         A = 0; 
+     }; 
+     if(ticArray.includes(patterns[1])){ 
+         B = 1; 
+     } else { 
+         B = 0; 
+     };  
+     if(ticArray.includes(patterns[2])){ 
+         C = 1; 
+     } else { 
+         C = 0; 
+     };  
+     let D = A && B && C; //if all are TRUE, D is TRUE, else FALSE 
+     return D;//returns one if pattern is present, zero if not 
+ }; 
+
+
+ //FUNCTION ALL PATTERN CHECK - DONE 
+ //for all the element-patterns in the tictactoe pattern, test it against a player's tiles 
+ function checkAllPAtterns(inputTiles, tictactoePattern){//input id of tiles held by player and the pattern for TTT victory 
+     let E = 0;//declare here for access 
+     outer: for (let elem in tictactoePattern) {//test all patterns 
+         let subPat =  tictactoePattern[elem]; //store sub-pattern in a temp variable for neatness 
+         E = checkSubPattern(inputTiles, subPat);//call checker function, store the TRUE or FALSE result in a variable 
+         if (E == 1) break outer;//once any subpattern is present, immediately stop the loop 
+     }; 
+     return E; 
+ }; 
+  
+
+ //VAR GAME STEP COUNTER 
+ let gameStepCounter = 1;//counts the number of total steps in the game at the beginning 
+  
+ //VAR VICTORIOUS 
+ let victor = 0; //either 1 for human or 2 for AI 
+  
+ //FUNCTION GAME WINNER 
+ function gameWinner(victor){ 
+     let winnerPlayer = ''; 
+     if (victor == 1){ 
+         winnerPlayer = 'human'; 
+     } else { 
+         winnerPlayer = 'computer'; 
+     } 
+     alert(`Game over, ${winnerPlayer} wins!`); 
+ } 
+
+
+
+
+ //INITIALIZE 
+ generateGrids(3);//CALL STARTING GRID = 3x3 
+ createTileObject();//CALL TILE OBJECTS 
+  
+  
+ //TRIGGER FOR START BUTTON 
+ const Make = document.querySelector("#startButton") 
+ Make.addEventListener('click', () =>{ 
+     createNewPlayer();//create new player 
+     aiPlayer();//create AI     
+     resetTileObjects();//blank all the tiles 
+     gameStepMessenger();//announce step of player  
+     eventListenerTiles()//call add event listener to tiles 
+     gameStepCounter = gameStepCounter++; 
+     } 
+ ) 
+
+
+
+ //SEQUENCE OF EVENTS 
+ /*  
+ 0. Initialize by creating grids 
+ 1. Player 1 clicks start, inputs name, this resets all tiles status to blank 
+ 2. Player 1 does the first move by clicking the tile which changes the tile color and status, step counter starts at 1 
+ 3. After Player 1's click, the AI randomizes the tile choice and changes the tile color, step counter at 2 
+ 4. Player 1 clicks again, step counter at 3 
+ 5. AI chooses again, step counter at 4 
+ 6. ....at step counter = 5, victory evaluator kicks in 
+ 7. Once any player wins, game message pops up at a prompt to continue emulates step#1 
+ */ 
+  
+  
+ //[X]Trigger for start button 
+ //[X]call player constructor 
+ //[x]call tile change function 
+ //[. ]call victory evaluate 
+ //[. ]call AI move 
+ //[. ]call tile change function 
+ //[. ]call victory evaluate 
+ //[. ]call game winner 
+ //[. ]call reset button 
+ //[ ]CSS for tile colors 
+ //[ ]CSS for design 
+ //[ ]use modules 
+  
+  
+  
+  
+  
+ //AI to pick random tiles 
+  
+  
+  
+  
+ </script> 
+ </body> 
+ </html>
+
+
+
