@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        .button {
+            padding: 10px;
+        }
+
+        #containerDiv {
+            display: grid;
+            /*for tiles*/
+        }
+
+        .pixels {
+            border: 1px solid rgb(0, 0, 0);
+            background: blueviolet;
+            /*purple tiles*/
+        }
+        .cross {
+            border: 1px solid rgb(0, 0, 0);
+            background: rgb(0, 229, 255);
+            /*teal tiles*/
+        }
+        .circle {
+            border: 1px solid rgb(0, 0, 0);
+            background: rgb(255, 0, 0);
+            /*red tiles*/
+        }
+
+        /* .cross {
+            border: 1px solid rgb(0, 0, 0);
+            background: url(media/cross.png);
+            background-size: 100%;
+        } */
+
+        /* .circle {
+            border: 1px solid rgb(0, 0, 0);
+            background: url(media/circle.png);
+            background-size: 100%;
+        } temporarily disabled for portable editing*/
+    </style>
+</head>
+
+<body>
+    <div>
+        <h1>Tic Tac Toe</h1>
+        <p id='statusBar'>Status Bar</p>
+
+        <button id="startButton">Start</button>
+    </div>
+    <div id='containerDiv'></div>
+    <script>
+
+        /*List by actions
+        0. Initialize
+        0. Player clicks RESET
+        1. Player clicks START
+        2. Player enters NAME
+        3. Player chooses TILE
+        4. AI chooses TILE
+        5. A round WINNER emerges
+        6. A game WINNER emerges
+        [ ] rewrite into modules
+        [ ] html
+        [ ] css
+        [ ] gamescore
+        [ ] modules
+        */
+
+        ////////////////////////////////////////////////////////////////
+        //VARIABLES
+
+        //PLAYER CREATOR
+        const Player = []; //players created 
+        let name = "";//name for player constructor fn
+        let playerId = "";//id for player constructor fn 
+
+        //GAMESTEP and GAMEROUND
+        let gameStepCounter = 1;//turn 1
+        let gameRoundCounter = 1;//turn 1
+
+        //TILE EVENT LISTENERS
+        const Tiles = []; //js DOM entities for tiles for event listener attachment
+
+        //ATTACH POINT FOR GRID
+        const ContainerDiv = document.querySelector('#containerDiv');//attach point by id
+
+        //STATUS BAR 
+        const statusBar = document.querySelector('#statusBar');
+
+        //UNOCCUPIED TILES
+        let unoccupiedTilesArray = [];
+
+        //NEXT TILE
+        let nextTile = 0;
+
+        //WINNING PATTERN 
+        let tictactoePatterns = [
+            [7, 5, 3],
+            [1, 5, 9],
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9],
+            [1, 4, 7],
+            [2, 5, 8],
+            [3, 6, 9]
+        ]; //declare array containing array of patterns for tictactoe victory; tiles start from L-R from 1 to 9 - DONE 
+
+        //PATTERN CHECK
+        let E = 0;//holds TRUE or FALSE if a pattern check was met
+
+        //PLAYER SCORES
+        let humanScore = 0;
+        let aiScore = 0;
+
+        ////////////////////////////////////////////////////////////////
+        //FUNCTIONS
+        ////////////////////////////////////////////////////////////////
+
+        //CHANGE STATUS
+        function statusBarChange(statusBarMessage) {
+            statusBar.textContent = statusBarMessage;
+        }
+
+        //DISABLE/ENABLE START BUTTON - DONE
+        function toggleStartButton(toggle) {
+            if (toggle == 1) {
+                document.getElementById("startButton").disabled = false;//enable
+            } else if (toggle == 0) {
+                document.getElementById("startButton").disabled = true;//disable
+            }
+        }
+
+        //PLAYER CONSTRUCTOR - DONE
+        function newPlayer(name) { //, playerTiles
+            this.name = name //title prototype = title var etc. 
+            this.playerTiles = [] //set array to empty
+        }
+
+        //CREATE PLAYER - DONE
+        function createNewPlayer() {
+            name = ''; //reset for new name
+            while (name == '') {//loop as long as name is empty
+                name = prompt('Name of Player');//prompt for name 
+            };
+            Player[1] = new newPlayer(
+                name
+            ); //new player object
+        }
+
+        //FUNCTION AI PLAYER CREATOR
+        function aiPlayer() {
+            Player[2] = new newPlayer('Computer', 2);
+        }
+
+        //GRID GENERATE - DONE 
+        function generateGrids(gridSize) {
+            for (let i = 0; i < (gridSize ** 2); i++) { //n tiles equal to size^2 by loopig 
+                let newDiv = document.createElement('div');//store new div in a variable 
+                newDiv.id = 1 + i; //give it different id each time, start with 1
+                newDiv.classList = 'pixels'; //common class for manipulation 
+                ContainerDiv.appendChild(newDiv);//append each to attach point for every loop
+                ContainerDiv.style.cssText = `grid-template-columns: repeat(${gridSize}, calc(66vmin/${gridSize}));grid-template-rows: repeat(${gridSize}, calc(66vmin/${gridSize}))`;//grid property is based on grid size; also the size is based on smallest viewport
+            };
+        };
+
+
+        //TILE DOM - DONE
+        function createTileObject() {
+            for (let j = 1; j < 10; j++) {
+                Tiles[j] = document.getElementById(j); //create an object per div
+                Tiles[j].tileStatus = 0;//0 is blank, 1 is X, 2 is O 
+                Tiles[j].tileEventListenerEnable = 1; //1 is enable, 0 is disable
+            }
+        }
+
+
+        //CHANGE TILE - DONE
+        function changeTile(tileId, chTilePlId) {//id number of tile and player 
+            Tiles[tileId].tileStatus = chTilePlId; //human = 1, AI = 2
+            if (chTilePlId == 1) {
+                Tiles[tileId].className = "cross";//html class 
+            } else {
+                Tiles[tileId].className = "circle";//html class
+            }
+        };
+
+        //UNOCCUPIED TILES
+        function unoccupiedTiles() {
+            unoccupiedTilesArray = [];//reset during refresh to avoid stacking array
+            for (let l = 1; l < 10; l++) {//from 1 to 9
+                if (Tiles[l].tileStatus == 0) {//check if the tile is unoccupied
+                    unoccupiedTilesArray.push(parseInt((Tiles[l].id)))//if yes then add id of tile
+                } else { };
+            }
+        };
+
+        //TILE RESET - DONE
+        function resetTileObjects() {
+            for (let j = 1; j < 10; j++) {
+                Tiles[j].tileStatus = 0;//set tile to unoccupied
+                Tiles[j].className = "pixels";//changes html class to blank pixel
+                Tiles[j].tileEventListenerEnable = 1; //enable again all tile event listeners
+            }
+        }
+
+        //GAME STEP AND ROUND MESSENGER - DONE
+        function gameStepMessenger() {
+            //tells round, turn, player's turn, human score, AI score
+            let currentTurn = '';
+            if (gameStepCounter % 2 != 0) {//step is odd
+                currentTurn = 'Human Player';
+            } else {
+                currentTurn = 'AI Player'; //step is even
+            }
+            let gameMessage = '';
+            gameMessage = 'Game Round-' + gameRoundCounter +
+                '\nTurn-' + gameStepCounter +
+                '\nHuman Score-' + humanScore +
+                '\nAI Score-' + aiScore +
+                '\nYour Turn, ' + currentTurn;
+            statusBarChange(gameMessage);
+        };
+
+        //AI NEXT MOVE - SKIP
+        function aiNextMove() {
+            let z = 0;
+            while (!z == 1) {//while z is not 1, loop
+                let randNum = Math.random();//0.0 to 0.9 
+                nextTile = Math.ceil(randNum * 10);//convert to integer 
+                if (unoccupiedTilesArray.includes(nextTile)) {
+                    z = 1;//if tile is within unoccupied, set z to 1
+                }
+            }
+        };
+
+        // //LIST OF TILE IDS OWNED BY PLAYER
+        //  function tileListPlayer_old(tileId, playerId){
+        //      (Player[playerId].playerTiles).push(tileId);
+        // }
+
+        //LIST OF TILE IDS OWNED BY PLAYER v2
+        function tileListPlayer(playerId) {
+            Player[playerId].playerTiles = [];//reset during refresh to avoid stacking array
+            for (let m = 1; m < 10; m++) {//from 1 to 9
+                if (Tiles[m].tileStatus == playerId) {//check if the tile is owned by player of given pl id
+                    (Player[playerId].playerTiles).push(parseInt((Tiles[m].id)))//if yes then add id of tile
+                } else { };
+            }
+        };
+
+
+        ///CHECK A PATTERN
+        function checkSubPattern(ticArray, patterns) {
+            let A = 0;
+            let B = 1;
+            let C = 2;//ABC are sub test results holders 
+            if (ticArray.includes(patterns[0])) {
+                A = 1;
+            } else {
+                A = 0;
+            };
+            if (ticArray.includes(patterns[1])) {
+                B = 1;
+            } else {
+                B = 0;
+            };
+            if (ticArray.includes(patterns[2])) {
+                C = 1;
+            } else {
+                C = 0;
+            };
+            let D = A && B && C; //if all are TRUE, D is TRUE, else FALSE 
+            return D;//returns one if pattern is present, zero if not 
+        };
+
+        //CHECK ALL PATTERNS
+        function checkAllPAtterns(inputTiles, tictactoePattern, playerId) {//ids of tiles held vs all possible patterns
+            E = 0; //reset E to zero every time a check is being started
+            if(gameStepCounter >= 5){
+                outer: for (let elem in tictactoePattern) {//test all patterns 
+                let subPat = tictactoePattern[elem]; //store sub-pattern in a temp variable for neatness 
+                E = checkSubPattern(inputTiles, subPat);//call checker function, store the TRUE or FALSE result in a variable 
+                if (E == 1) break outer;//once any subpattern is present, immediately stop the loop 
+                };
+            }
+            if(E==1) {
+                if(playerId==1){
+                    humanScore++;
+                } else {
+                    aiScore++;//add score to round winner
+                }
+                alert('someone won' + E);
+                gameRoundCounter++
+                roundReset()
+                //[ ] stop AI from making a turn once a winner emerges
+            };
+            return E;//not needed anymore
+        };
+
+        //ROUND WINNER - DONE
+        function roundWinner(winner) {
+            let winnerPlayer = '';
+            if (winner == 1) {
+                winnerPlayer = 'human';
+            } else {
+                winnerPlayer = 'computer';
+            }
+            alert(`Game over, ${winnerPlayer} wins!`);
+        }
+
+        //GAME WINNER - DONE
+        function gameWinner(winner) {
+            let winnerPlayer = '';
+            if (winner == 1) {
+                winnerPlayer = 'human';
+            } else {
+                winnerPlayer = 'computer';
+            }
+            alert(`Game over, ${winnerPlayer} wins!`);
+        }
+
+        //ROUND SCORE
+        /*function roundScore(roundWinnerId) {
+            if (roundWinnerId == 1) {
+                humanScore++
+            } else if (roundWinnerId == 2) {
+                aiScore++
+            }
+        } deprecated*/
+
+        //AFTER TURN FOR PLAYERS!
+        function afterTurn(playerId, chosenTileId) {
+            let playerTurn = '';
+            if (playerId == 1) {
+                playerTurn = 'Human';
+            } else {
+                playerTurn = 'AI';
+            }
+            alert(playerTurn + 'player selected tile ' + chosenTileId);//checker 
+            changeTile(chosenTileId, playerId);//change tile status and class for player - DONE
+            tileListPlayer(playerId);//lists clicked tiles of player - DONE
+            alert(playerTurn + 'player now owns tile/s ' + Player[playerId].playerTiles);
+            checkAllPAtterns(Player[playerId].playerTiles, tictactoePatterns, playerId);
+            
+            Tiles[chosenTileId].tileEventListenerEnable = 0; //disable tile event listener status after being chosen [ ]
+            //[X]remove event listener on clicked or chosen tile
+            //[]function to declare next round as needed  gameRoundCounter++
+            //[]function to reset the game for the next round
+            gameStepCounter++;//turn 2
+            gameStepMessenger();//AI's turn
+        };
+
+        //AI TURN CALL - end output is the tile chosen by AI
+        //function to make AI choose
+        function aiChooseTile(){
+            unoccupiedTiles(); //unoccupiedTilesArray
+            aiNextMove(); //nextTile
+        }
+
+        //ROUND RESET
+        function roundReset() {
+            //victor = 0;//sets winner to none
+            gameStepCounter = 0;//sets game step to 1;
+            resetTileObjects();
+            //reset all tile status in the DOM
+        
+
+            //unoccupiedTilesArray = [];//sets all tiles available for AI - self resets, not needed anymore
+            //Player[1].playerTiles = [];//sets owned tiles to zero - self resets not needed
+            //Player[2].playerTiles = [];//sets owned tiles to zero
+            //set all tiles to blank
+        }
+
+        // reset 
+        ////////////////////////////////////////////////////////////////
+        //CALLS
+        ////////////////////////////////////////////////////////////////
+
+        //TRIGGER FOR START BUTTON 
+        //  const Make = document.querySelector("#startButton") 
+        //  Make.addEventListener('click', () =>{ 
+        //      createNewPlayer();//create new player 
+        //      aiPlayer();//create AI     
+        //      resetTileObjects();//blank all the tiles 
+        //      gameStepMessenger();//announce step of player  
+        //      eventListenerTiles()//call add event listener to tiles 
+        //      gameStepCounter = gameStepCounter++; 
+        //      toggleStartButton(0);//off the button
+        //      } 
+        //  ) 
+
+        //WRAPPER FOR EVENT LISTENER
+        
+        //EVENT LISTENER TO TILES 
+        function eventListenerTiles() {//when player clicks a tile 
+            for (let k = 1; k < 10; k++) {
+                Tiles[k].addEventListener('click', (e) => {
+                    let clickedTileId = parseInt((e.target).id);//temporary to store ID of tile clicked 
+
+                    outer: if(Tiles[clickedTileId].tileEventListenerEnable == 0){//if the status of clicked tile is disabled, do nothing
+                        //return blank
+                    } else{ //if the status is active, do these
+                        afterTurn(1, clickedTileId);
+                        if(E == 1){break outer};
+                        //function to break sequence when there is a round winner
+                        aiChooseTile();
+                        afterTurn(2, nextTile);
+                        if(E == 1){break outer};
+                        //function to break sequence when there is a round winner
+                    };
+                    //[]on round reset, set all tiles to 'active/
+                }
+                )
+            };
+        };
+
+        //STEPS
+        //1.    Grid is present - DONE
+        //a.    A loop that creates a grid based on input size 
+        //b.    Call grid size of 3
+        generateGrids(3);
+
+        //2.    Screen is blank - DONE, 
+        // a.    Screen div initially blank
+        // b.    A function that changes div label based on input string
+        // /statusBarChange('msg')
+
+        // 3.    Player automatically prompted for name - DONE
+        // a.    At loading, the player is prompted for a name
+        // 4.    Player enters name
+        // a.    Only non black inputs are accepted
+        // 5.    Name is stored 
+        // a.    A game data file stores player name under property (Player.name)
+        createNewPlayer();
+
+        //Player[1]
+        //create and AI
+        aiPlayer();
+
+        // 6.    Game round is at 1 - DONE
+        // a.    A game data file stores game round name under property gameRound (let gameRoundCounter)
+        // b.    gameRoundCounter is set to 1
+        // 7.    Game step is at 1
+        // a.    A game data file stores game round name under property gameStep (let gameStepCounter)
+        // b.    gameStep is set to 1
+        //gameRoundCounter
+        //gameStepCounter
+
+        // 8.    Screen tells player it is his or her turn
+        // a.    Screen function is called with “your turn”
+        gameStepMessenger();
+
+        // 9.    Player marks tile by clicking - DONE
+        // a.    Objects for each tile are declared
+        createTileObject()
+
+        // b.    An event listener is added to the tiles
+        // c.    Upon click, the tile changes style depending on the input clicked tile id and the clickers id
+        // 2.    Update tiles owned by player who recently finished step
+        // 4.    Add +1 to step
+        // 5.    Update tiles owned by player who recently finished step
+        // 6.    Update turn message
+        // 7.    Check pattern for winners of round, update score as necessary, also updates the roundwinner
+        eventListenerTiles();
+
+        // 10.    In the next turn or step update available tiles, tiles owned of player, step count, and pattern check
+        //     1.    Update tiles available for AI
+        //     3.    Add +1 to step
+        //     4.    Check pattern for winners of round, 
+        //          update score as necessary, -DONE
+        //          also updates the roundwinner
+        //      if checkpattern returns true, reset the round
+        //     5.    Check for round end -DONE
+        //     6.    Check for game end -DONE
+        //see afterTurn()
+
+/*      11. If game step is equal to, or greater than 5, pattern will be checked for round winner
+        If gameStep >= 5, the pattern checker will be called
+        Event listener when the variable value is changed
+        The current holding of the players tiles is stored in playerTiles
+        playerTiles is reset and refreshed whenever the gameStep changes
+        The pattern checker checks the all winning patterns against the current pattern of the input pattern of the current player
+        patternChecker changes the roundWinner value and playerScores values */
+
+/*      12. If there is a round winner, round will be ended
+        Tiles will be set to blank styles
+        Available tiles for the AI is also set to clear and then set to 1-9 again */
+
+    </script>
+</body>
+
+</html>
+
+
+
